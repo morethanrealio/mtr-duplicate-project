@@ -173,12 +173,13 @@ def duplicate_button():
                 button['url'],
                 new_asset_id,
                 new_project_id,
-                button['html_id']
+                button['html_id'],
+                button['label']
             )
 
             cur.execute("""
-                INSERT INTO cms_button (id, name, active, url, asset_id, project_id, html_id)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO cms_button (id, name, active, url, asset_id, project_id, html_id, label)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """, new_button)
 
         conn.commit()
@@ -320,12 +321,14 @@ def duplicate_materials():
                 material['preco_promo'],
                 material['description'],
                 material['reflectivity'],
-                material['skin_tone']
+                material['skin_tone'],
+                material['icon_color'],
+                material['emissive_intensity'],
             )
 
             cur.execute("""
-                INSERT INTO cms_material (id, name, normal_map_intensity, ao_map_intensity, roughness_map_intensity, type_mat, color, opacity, roughness, metalness, clearcoat, "clearcoatRoughness", alpha_map_id, ao_map_id, model3d_id, normal_map_id, project_id, roughness_map_id, texture_map_id, asset_id, ean, link1, link2, preco, preco_promo, description, reflectivity, skin_tone)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO cms_material (id, name, normal_map_intensity, ao_map_intensity, roughness_map_intensity, type_mat, color, opacity, roughness, metalness, clearcoat, "clearcoatRoughness", alpha_map_id, ao_map_id, model3d_id, normal_map_id, project_id, roughness_map_id, texture_map_id, asset_id, ean, link1, link2, preco, preco_promo, description, reflectivity, skin_tone, icon_color, emissive_intensity)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, novo_material)
 
         conn.commit()
@@ -361,6 +364,35 @@ def duplicate_variant():
         conn.commit()
         print("Variantes duplicadas com sucesso.")
 
+def duplicar_nps():
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute("SELECT * FROM cms_nps WHERE project_id IN %s", (tuple(project_relation.keys()),))
+        old_nps = cur.fetchall()
+
+        for nps in old_nps:
+            new_id = get_new_id("cms_nps")
+            new_project_id = project_relation.get(nps['project_id'])
+
+            new_nps = (
+                new_id,
+                nps['review'],
+                nps['facemesh_version'],
+                nps['platform_version'],
+                nps['created_at'],
+                new_project_id,
+                nps['comment'],
+                nps['email']
+            )
+
+            cur.execute("""
+                INSERT INTO cms_nps (id, review, facemesh_version, platform_version, created_at, project_id, "comment", email)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """, new_nps)
+
+        conn.commit()
+        print("NPS duplicados com sucesso.")
+
+
 if __name__ == "__main__":
     start_time = time.time()
 
@@ -368,24 +400,23 @@ if __name__ == "__main__":
     print()
 
     try:
-        # Inserir aqui o novo nome do projeto
-        new_project_name = "Vult VD"
-        # new_project_name = "Eudora V2"
+        new_project_names = ["boticario-vd", "outro-projeto-vd"]
 
-        # Inserir aqui o id do cliente que deseja ser duplicado
-        old_client_id = 41
-        # old_client_id = 26
-        
-        new_client_id, nametag, old_nametag = duplicate_client(new_project_name, old_client_id)
-        duplicate_clientuser(old_client_id, new_client_id, nametag, new_project_name)
-        duplicate_project(new_client_id, old_client_id, nametag, old_nametag)
-        duplicate_assets(new_client_id, old_client_id)
-        duplicate_button()
-        duplicate_pictures()
-        duplicate_text()
-        duplicate_models()
-        duplicate_materials()
-        duplicate_variant()
+        old_client_ids = [48, 49]
+
+        for new_project_name, old_client_id in zip(new_project_names, old_client_ids):
+            print("----------Começando duplicação do projeto:", new_project_name, "-----------")
+            new_client_id, nametag, old_nametag = duplicate_client(new_project_name, old_client_id)
+            duplicate_clientuser(old_client_id, new_client_id, nametag, new_project_name)
+            duplicate_project(new_client_id, old_client_id, nametag, old_nametag)
+            duplicate_assets(new_client_id, old_client_id)
+            duplicate_button()
+            duplicate_pictures()
+            duplicate_text()
+            duplicate_models()
+            duplicate_materials()
+            duplicate_variant()
+            duplicar_nps()
 
     finally:
         conn.close()
