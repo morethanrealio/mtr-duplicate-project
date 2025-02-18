@@ -400,12 +400,15 @@ if __name__ == "__main__":
     print()
 
     try:
-        new_project_names = ["boticario-vd", "outro-projeto-vd"]
+        new_project_names = ["eudora-vd", "quem-disse-berenice-vd"]
 
-        old_client_ids = [48, 49]
+        old_client_ids = [26, 42]
 
         for new_project_name, old_client_id in zip(new_project_names, old_client_ids):
             print("----------Começando duplicação do projeto:", new_project_name, "-----------")
+            project_relation = {}
+            asset_relation = {}
+            model_relation = {}
             new_client_id, nametag, old_nametag = duplicate_client(new_project_name, old_client_id)
             duplicate_clientuser(old_client_id, new_client_id, nametag, new_project_name)
             duplicate_project(new_client_id, old_client_id, nametag, old_nametag)
